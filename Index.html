@@ -1,0 +1,114 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF Viewer — iPad (iOS 9.3.5) Friendly</title>
+  <style>
+    /* Minimal dark theme; works on old Safari (no CSS vars needed) */
+    html, body { height: 100%; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0f1115; color: #e7e9ee; }.wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+.card { background: #151821; border: 1px solid #23283b; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,.35); overflow: hidden; }
+
+.header { padding: 16px 16px 0 16px; }
+.title { font-size: 20px; margin: 0 0 8px 0; font-weight: 700; }
+.subtitle { font-size: 14px; margin: 0 0 12px 0; color: #b7bcc9; }
+
+.toolbar { display: -webkit-box; display: -ms-flexbox; display: flex; -ms-flex-wrap: wrap; flex-wrap: wrap; gap: 8px; padding: 12px 16px 16px; border-top: 1px solid #23283b; }
+.btn { display: inline-block; padding: 10px 14px; font-size: 14px; border-radius: 999px; border: 1px solid #343b55; text-decoration: none; color: #e7e9ee; background: #1a1f2e; -webkit-tap-highlight-color: rgba(255,255,255,0); }
+.btn:hover { background: #1f2536; }
+
+.viewer { width: 100%; height: 70vh; background: #0b0d13; border-top: 1px solid #23283b; }
+.fallback { padding: 16px; font-size: 14px; color: #cfd3de; }
+
+.note { font-size: 12px; color: #9aa3b2; margin-left: 8px; }
+
+/* Small devices (incl. iPad in portrait) */
+@media (max-width: 768px) {
+  .viewer { height: 65vh; }
+  .title { font-size: 18px; }
+}
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="header">
+        <h1 class="title">PDF Showcase</h1>
+        <p class="subtitle">Optimized for Safari on iPad 2 (iOS 9.3.5). Replace <code>sample.pdf</code> with your file.</p>
+      </div><!-- Inline PDF viewer area -->
+  <div id="pdfContainer" class="viewer">
+    <!-- Use <iframe> for iOS Safari; parameters like #toolbar are ignored by iOS but harmless elsewhere -->
+    <iframe id="pdfFrame" src="sample.pdf" title="PDF" style="border:0; width:100%; height:100%;" allowfullscreen></iframe>
+    <noscript>
+      <div class="fallback">JavaScript is off. <a href="sample.pdf" target="_blank" rel="noopener">Open the PDF</a>.</div>
+    </noscript>
+  </div>
+
+  <!-- Controls -->
+  <div class="toolbar">
+    <a class="btn" href="sample.pdf" target="_blank" rel="noopener" id="openBtn">Open Fullscreen</a>
+    <!-- The download attribute is not supported on iOS 9; this still helps on desktop/modern browsers. -->
+    <a class="btn" href="sample.pdf" id="downloadBtn" download>Download</a>
+    <span class="note" id="iosNote">On iPad iOS 9: tap <em>Open Fullscreen</em>, then use the Share icon to “Open in…” or save to iBooks.</span>
+  </div>
+</div>
+
+<p class="note" style="padding:12px 4px;">Tip: If the PDF doesn’t load inline (some servers block embedding), use <strong>Open Fullscreen</strong>.</p>
+
+  </div>  <script>
+    (function () {
+      // ES5 only for iOS 9 compatibility
+      var pdfURL = "GT.pdf"; // 🔁 CHANGE THIS to your PDF path (same folder or absolute URL)
+
+      // If you want to set the PDF dynamically, you can append ?file=... to the page URL
+      // Example: viewer.html?file=MyDoc.pdf
+      function getQueryParam(name) {
+        var match = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+        return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+      }
+      var qf = getQueryParam('file');
+      if (qf) { pdfURL = qf; }
+
+      // Set URLs for iframe and buttons
+      var frame = document.getElementById('pdfFrame');
+      var openBtn = document.getElementById('openBtn');
+      var downloadBtn = document.getElementById('downloadBtn');
+      frame.src = pdfURL;
+      openBtn.href = pdfURL;
+      downloadBtn.href = pdfURL;
+
+      // Feature-detect the download attribute; hide the iOS note if download works.
+      var a = document.createElement('a');
+      var supportsDownload = typeof a.download !== 'undefined';
+      if (supportsDownload) {
+        // Still show the iOS note if this is iOS 9 specifically, because Safari ignores download.
+        var iOS = /iP(ad|hone|od)/.test(navigator.platform) || (navigator.userAgent.indexOf('iPad') > -1);
+        var iOSVersion9 = /OS 9_/.test(navigator.userAgent);
+        if (!(iOS && iOSVersion9)) {
+          var note = document.getElementById('iosNote');
+          if (note) note.style.display = 'none';
+        }
+      }
+
+      // Optional: gracefully handle CSP/x-frame-opts failures by showing a message if the frame fails.
+      // (There is no reliable cross-browser onerror for iframes; simple timeout heuristic.)
+      setTimeout(function () {
+        try {
+          // If we can access frame document title, it likely loaded; if not, host may block embedding.
+          var ok = frame && frame.contentDocument; // may throw in some cases; hence try/catch
+          // no-op; just accessing
+        } catch (e) {
+          var container = document.getElementById('pdfContainer');
+          if (container) {
+            container.innerHTML = '<div class="fallback">This PDF cannot load inline. <a href="' + pdfURL + '" target="_blank" rel="noopener">Open the PDF</a>.</div>';
+          }
+        }
+      }, 1500);
+    })();
+  </script></body>
+</html>
